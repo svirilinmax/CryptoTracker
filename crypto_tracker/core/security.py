@@ -42,7 +42,6 @@ def decode_token(token: str):
 
 # -------------User-------------------
 async def get_current_user(token: str = Depends(oauth2_scheme),db: AsyncSession = Depends(get_db)):
-    print(f"Token received: {token}")
     try:
         payload = decode_token(token)
         user_id = payload.get("sub")

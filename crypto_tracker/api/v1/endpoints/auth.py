@@ -52,4 +52,4 @@ async def login(credentials: UserLoginRequest, db: AsyncSession = Depends(get_db
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
-    return current_use
+    return current_user
