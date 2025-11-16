@@ -7,7 +7,7 @@ from watchfiles import awatch
 from core.database import get_db
 from core.security import get_current_user
 from models.database import User, Asset
-from models.schemas import AssetResponse, AssetCreateRequest, AssetUpdateRequest
+from models.schemas import AssetResponse, AssetCreateRequest, AssetUpdateRequest, PriceHistory
 from crud.asset import (get_assets_by_user,
                         get_active_assets_by_user,
                         get_asset_by_id,
@@ -15,6 +15,7 @@ from crud.asset import (get_assets_by_user,
                         restore_asset_by_id,
                         update_asset,
                         delete_asset)
+from crud.price_history import get_price_history_by_asset
 
 router = APIRouter()
 
@@ -89,3 +90,21 @@ async def delete_existing_asset(asset_id: int,
     if not result:
         raise HTTPException(404, "Asset not found")
     return {"message": "Asset deleted successfully"}
+
+
+@router.get("/{asset_id}/history", response_model=List[PriceHistory])
+async def get_asset_price_history(
+        asset_id: int,
+        limit: int = 100,
+        current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)
+):
+    """
+    Получить историю цен для конкретного актива
+    """
+    asset = await get_asset_by_id(db, asset_id, current_user.id)
+    if not asset:
+        raise HTTPException(404, "Asset not found")
+
+    history = await get_price_history_by_asset(db, asset_id, limit)
+    return history
