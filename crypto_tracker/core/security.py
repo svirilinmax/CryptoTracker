@@ -7,17 +7,15 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_db
+from core.config import settings
 
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
-
-# Потом в env закинем
-JWT_SECRET = 'CHANGE_ME_SUPER_SECRET_32CHARS'
+JWT_SECRET = settings.JWT_SECRET
 JWT_ALG = 'HS256'
 JWT_EXPIRE_SEC = 60 * 60 * 24 * 7  # 7 дней
-COOKIE_NAME = 'token'
 
 
 # -------------Password-------------------

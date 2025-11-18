@@ -134,6 +134,17 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
+# Database
+*.db
+*.sqlite3
+app.db
+
+# Docker
+celery_beat_data/
+
+# Celery
+celerybeat-schedule*
+
 # Environments
 .env
 .envrc

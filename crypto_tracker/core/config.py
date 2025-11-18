@@ -2,10 +2,12 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    CRYPTO_API_KEY: str = "CG-QAa7MVJ3Q1korNz14usWqcBa"
-    DATABASE_URL: str = "sqlite+aiosqlite:///./crypto.db"
-    REDIS_URL: str = "redis://localhost:6379/0"
-    #SECRET_KEY: str = "your-secret-key-here"
+
+    CRYPTO_API_KEY: str
+    DATABASE_URL: str = "postgresql://crypto_user:crypto_password@postgres:5432/crypto_db"
+    REDIS_URL: str = "redis://redis:6379/0"
+    JWT_SECRET: str
+    SECRET_KEY: str
 
     class Config:
         env_file = ".env"

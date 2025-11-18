@@ -4,6 +4,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime
 
 from core.database import create_tables
 from api.v1.routers import api_router
@@ -34,6 +35,9 @@ async def startup_event():
         if hasattr(route, 'path'):
             print(f"🔍 Route: {route.path}")
 
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "timestamp": datetime.utcnow()}
 
 @app.get("/")
 async def root():

@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: cryptotreker-postgres
+    environment:
+      POSTGRES_DB: crypto_db
+      POSTGRES_USER: crypto_user
+      POSTGRES_PASSWORD: crypto_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crypto_user -d crypto_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: cryptoTreker-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    container_name: cryptoTreker-app
+    environment:
+      DATABASE_URL: postgresql://crypto_user:crypto_password@postgres:5432/crypto_db
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - .:/crypto_traker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8000/docs || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  celery-worker:
+    build: .
+    container_name: cryptoTreker-celery-worker
+    environment:
+      DATABASE_URL: postgresql://crypto_user:crypto_password@postgres:5432/crypto_db
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - .:/crypto_traker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    command: celery -A services.celery_app.celery_app worker --loglevel=info
+    user: "celeryuser:celeryuser"
+    healthcheck:
+      test: ["CMD", "celery", "-A", "services.celery_app.celery_app", "inspect", "ping", "-d", "celery@$$(hostname)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  celery-beat:
+    build: .
+    container_name: cryptoTreker-celery-beat
+    environment:
+      DATABASE_URL: postgresql://crypto_user:crypto_password@postgres:5432/crypto_db
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - celery_beat_data:/tmp/celery
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    command: celery -A services.celery_app.celery_app beat --loglevel=info
+    user: "celeryuser:celeryuser"
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A services.celery_app.celery_app inspect scheduled | grep -q beat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+  redis_data:
+  celery_beat_data:
