@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from models.database import User
-from models.schemas import UserCreateRequest
-from core.security import make_password_hash
+from backend.api_gateway.models.database import User
+from backend.api_gateway.models.schemas import UserCreateRequest
+from backend.api_gateway.core.security import make_password_hash
 
 async def get_user_by_email(db: AsyncSession, email: str):
     result = await db.execute(select(User).where(User.email == email))

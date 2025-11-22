@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from typing import List, Optional
-from models.database import Asset
-from models.schemas import AssetCreateRequest, AssetUpdateRequest
+from backend.api_gateway.models.database import Asset
+from backend.api_gateway.models.schemas import AssetCreateRequest, AssetUpdateRequest
 
 
 async def get_assets_by_user(db: AsyncSession, user_id: int) -> List[Asset]:
@@ -63,16 +63,24 @@ async def create_asset(db: AsyncSession, asset_data: AssetCreateRequest, user_id
     Returns:
         Asset: Созданный актив
     """
+    from backend.api_gateway.services.price_service import get_current_price
+
+    current_price = await get_current_price(asset_data.symbol.upper())
+
     db_asset = Asset(
         user_id=user_id,
         symbol=asset_data.symbol.upper(),
         min_price=asset_data.min_price,
         max_price=asset_data.max_price,
+        current_price=current_price,
         is_active=True
     )
     db.add(db_asset)
     await db.commit()
     await db.refresh(db_asset)
+    if current_price is not None:
+        from backend.api_gateway.crud.price_history import create_price_history
+        await create_price_history(db, db_asset.id, current_price)
     return db_asset
 
 
@@ -105,9 +113,15 @@ async def update_asset(db: AsyncSession,
        Returns:
            Asset | None: Обновленный актив или None если не найден
        """
+    from backend.api_gateway.services.price_service import get_current_price
+
     asset = await get_asset_by_id(db, asset_id, user_id)
     if not asset:
         return None
+
+    if asset_data.symbol and asset_data.symbol != asset.symbol:
+        current_price = await get_current_price(asset_data.symbol.upper())
+        asset.current_price = current_price
 
     update_data = asset_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -138,10 +152,10 @@ async def delete_asset(db: AsyncSession, asset_id: int, user_id: int) -> bool:
     return True
 
 
-#_______________CELERY_____________________#
+#_______________WORKERё_____________________#
 async def get_all_active_assets(db: AsyncSession) -> List[Asset]:
     """
-    Получить все активные активы (для Celery задачи)
+    Получить все активные активы (для WORKER задачи)
     """
     result = await db.execute(select(Asset).where(Asset.is_active == True))
     return result.scalars().all()
@@ -151,7 +165,7 @@ async def update_asset_price(db: AsyncSession, asset_id: int, current_price: flo
     """
     Обновить текущую цену актива и записать в историю
     """
-    from crud.price_history import create_price_history
+    from backend.api_gateway.crud.price_history import create_price_history
 
     result = await db.execute(select(Asset).where(Asset.id == asset_id))
     asset = result.scalar_one_or_none()

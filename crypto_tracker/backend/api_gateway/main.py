@@ -1,14 +1,15 @@
 import sys
 import os
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, '/app')
+
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 
-from core.database import create_tables
-from api.v1.routers import api_router
-import asyncio
+from backend.api_gateway.core.database import create_tables
+from backend.api_gateway.api.v1.routers import api_router
 
 app = FastAPI(title="Crypto Tracker API")
 

@@ -1,13 +1,12 @@
 import time
 
 import jwt
-from aiohttp import web
 from passlib.hash import pbkdf2_sha256
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from core.database import get_db
-from core.config import settings
+from backend.api_gateway.core.database import get_db
+from backend.api_gateway.core.config import settings
 
 
 
@@ -49,7 +48,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme),db: AsyncSession 
                 detail="Invalid token"
             )
 
-        from crud.user import get_user_by_id
+        from backend.api_gateway.crud.user import get_user_by_id
         user = await get_user_by_id(db, user_id)
         if not user:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")

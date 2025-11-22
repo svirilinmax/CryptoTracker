@@ -137,7 +137,7 @@ celerybeat.pid
 # Database
 *.db
 *.sqlite3
-app.db
+crypto_tracker/app.db
 
 # Docker
 celery_beat_data/

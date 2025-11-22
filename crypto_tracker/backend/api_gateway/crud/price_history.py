@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from typing import List
-from models.database import PriceHistory
+from backend.api_gateway.models.database import PriceHistory
 
 async def create_price_history(db: AsyncSession, asset_id: int, price: float) -> PriceHistory:
     """

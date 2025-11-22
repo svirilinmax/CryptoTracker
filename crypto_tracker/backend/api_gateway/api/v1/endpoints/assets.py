@@ -2,20 +2,18 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
-from watchfiles import awatch
-
-from core.database import get_db
-from core.security import get_current_user
-from models.database import User, Asset
-from models.schemas import AssetResponse, AssetCreateRequest, AssetUpdateRequest, PriceHistory
-from crud.asset import (get_assets_by_user,
-                        get_active_assets_by_user,
-                        get_asset_by_id,
-                        create_asset,
-                        restore_asset_by_id,
-                        update_asset,
-                        delete_asset)
-from crud.price_history import get_price_history_by_asset
+from backend.api_gateway.core.database import get_db
+from backend.api_gateway.core.security import get_current_user
+from backend.api_gateway.models.database import User
+from backend.api_gateway.models.schemas import AssetResponse, AssetCreateRequest, AssetUpdateRequest, PriceHistory
+from backend.api_gateway.crud.asset import (get_assets_by_user,
+                                            get_active_assets_by_user,
+                                            get_asset_by_id,
+                                            create_asset,
+                                            restore_asset_by_id,
+                                            update_asset,
+                                            delete_asset)
+from backend.api_gateway.crud.price_history import get_price_history_by_asset
 
 router = APIRouter()
 
@@ -108,3 +106,25 @@ async def get_asset_price_history(
 
     history = await get_price_history_by_asset(db, asset_id, limit)
     return history
+
+
+@router.post("/{asset_id}/refresh")
+async def refresh_asset_price(
+        asset_id: int,
+        current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)
+):
+    """Мгновенное обновление цены актива"""
+    from backend.api_gateway.services.price_service import get_current_price
+    from backend.api_gateway.crud.asset import update_asset_price
+
+    asset = await get_asset_by_id(db, asset_id, current_user.id)
+    if not asset:
+        raise HTTPException(404, "Asset not found")
+
+    current_price = await get_current_price(asset.symbol)
+    if current_price is not None:
+        await update_asset_price(db, asset_id, current_price)
+        return {"status": "updated", "price": current_price, "symbol": asset.symbol}
+    else:
+        return {"status": "failed", "message": "Could not fetch current price"}
