@@ -1,20 +1,14 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 from typing import List, Optional
+
 from backend.api_gateway.models.database import Asset
 from backend.api_gateway.models.schemas import AssetCreateRequest, AssetUpdateRequest
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 
 async def get_assets_by_user(db: AsyncSession, user_id: int) -> List[Asset]:
     """
     Получает ВСЕ активы конкретного пользователя (включая и неактивные)
-
-    Args:
-        db (AsyncSession): Сессия базы данных
-        user_id (int): ID пользователя
-
-    Returns:
-        List[Asset]: Список всех активов этого пользователя
     """
     result = await db.execute(select(Asset).where(Asset.user_id == user_id))
     return result.scalars().all()
@@ -24,44 +18,31 @@ async def get_active_assets_by_user(db: AsyncSession, user_id: int) -> List[Asse
     """
     Получить только АКТИВНЫЕ активы пользователя
     """
-    result = await db.execute(select(Asset).where(
-        Asset.user_id == user_id,
-        Asset.is_active == True
-    ))
+    result = await db.execute(
+        select(Asset).where(Asset.user_id == user_id, Asset.is_active.is_(True))
+    )
     return result.scalars().all()
 
 
-async def get_asset_by_id(db: AsyncSession, asset_id: int, user_id: int) -> Optional[Asset]:
+async def get_asset_by_id(
+    db: AsyncSession, asset_id: int, user_id: int
+) -> Optional[Asset]:
     """
     Получить ОДИН актив по ID (только активный)
-
-    Args:
-        db (AsyncSession): Сессия базы данных
-        asset_id (int): ID актива
-        user_id (int): ID пользователя (для проверки принадлежности)
-
-    Returns:
-        Optional[Asset]: Найденный актив или None если не найден или не принадлежит пользователю
     """
-    result = await db.execute(select(Asset).where(
-        Asset.id == asset_id,
-        Asset.user_id == user_id,
-        Asset.is_active == True
-    ))
+    result = await db.execute(
+        select(Asset).where(
+            Asset.id == asset_id, Asset.user_id == user_id, Asset.is_active.is_(True)
+        )
+    )
     return result.scalar_one_or_none()
 
 
-async def create_asset(db: AsyncSession, asset_data: AssetCreateRequest, user_id: int) -> Asset:
+async def create_asset(
+    db: AsyncSession, asset_data: AssetCreateRequest, user_id: int
+) -> Asset:
     """
     Создать новый актив
-
-    Args:
-        db (AsyncSession): Сессия базы данных
-        asset_data (AssetCreateRequest): Данные для создания актива
-        user_id (int): ID пользователя-владельца
-
-    Returns:
-        Asset: Созданный актив
     """
     from backend.api_gateway.services.price_service import get_current_price
 
@@ -73,23 +54,28 @@ async def create_asset(db: AsyncSession, asset_data: AssetCreateRequest, user_id
         min_price=asset_data.min_price,
         max_price=asset_data.max_price,
         current_price=current_price,
-        is_active=True
+        is_active=True,
     )
     db.add(db_asset)
     await db.commit()
     await db.refresh(db_asset)
     if current_price is not None:
         from backend.api_gateway.crud.price_history import create_price_history
+
         await create_price_history(db, db_asset.id, current_price)
     return db_asset
 
 
-async def restore_asset_by_id(db: AsyncSession, asset_id: int, user_id: int) -> Optional[Asset]:
+async def restore_asset_by_id(
+    db: AsyncSession, asset_id: int, user_id: int
+) -> Optional[Asset]:
     """
     Восстановить неактивный актив
     """
     # Ищем ЛЮБОЙ актив (включая неактивные)
-    result = await db.execute(select(Asset).where(Asset.id == asset_id,Asset.user_id == user_id))
+    result = await db.execute(
+        select(Asset).where(Asset.id == asset_id, Asset.user_id == user_id)
+    )
     asset = result.scalar_one_or_none()
 
     if asset:
@@ -99,20 +85,12 @@ async def restore_asset_by_id(db: AsyncSession, asset_id: int, user_id: int) -> 
     return asset
 
 
-async def update_asset(db: AsyncSession,
-                       asset_id: int,
-                       asset_data: AssetUpdateRequest,
-                       user_id: int) -> Optional[Asset]:
+async def update_asset(
+    db: AsyncSession, asset_id: int, asset_data: AssetUpdateRequest, user_id: int
+) -> Optional[Asset]:
     """
-       Обновить существующий актив
-       Args:
-           db: Сессия базы данных
-           asset_id: ID актива для обновления
-           asset_data: Новые данные для обновления
-           user_id: ID пользователя (для проверки принадлежности)
-       Returns:
-           Asset | None: Обновленный актив или None если не найден
-       """
+    Обновить существующий актив
+    """
     from backend.api_gateway.services.price_service import get_current_price
 
     asset = await get_asset_by_id(db, asset_id, user_id)
@@ -134,14 +112,8 @@ async def update_asset(db: AsyncSession,
 
 async def delete_asset(db: AsyncSession, asset_id: int, user_id: int) -> bool:
     """
-        Удалить актив из отслеживаемых
-        Args:
-            db (AsyncSession): Сессия базы данных
-            asset_id (int): ID актива для удаления
-            user_id (int): ID пользователя (для проверки принадлежности)
-        Returns:
-            bool: True если удаление успешно, False если актив не найден
-        """
+    Удалить актив из отслеживаемых
+    """
 
     asset = await get_asset_by_id(db, asset_id, user_id)
     if not asset:
@@ -152,16 +124,18 @@ async def delete_asset(db: AsyncSession, asset_id: int, user_id: int) -> bool:
     return True
 
 
-#_______________WORKERё_____________________#
+# _______________WORKER_____________________#
 async def get_all_active_assets(db: AsyncSession) -> List[Asset]:
     """
-    Получить все активные активы (для WORKER задачи)
+    Получить все активные валюты (для WORKER задачи)
     """
-    result = await db.execute(select(Asset).where(Asset.is_active == True))
+    result = await db.execute(select(Asset).where(Asset.is_active.is_(True)))
     return result.scalars().all()
 
 
-async def update_asset_price(db: AsyncSession, asset_id: int, current_price: float) -> Optional[Asset]:
+async def update_asset_price(
+    db: AsyncSession, asset_id: int, current_price: float
+) -> Optional[Asset]:
     """
     Обновить текущую цену актива и записать в историю
     """

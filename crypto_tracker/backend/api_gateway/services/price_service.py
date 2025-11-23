@@ -1,13 +1,14 @@
-import aiohttp
 from typing import Optional
+
+import aiohttp
 from backend.api_gateway.core.config import settings
 
 SYMBOL_MAP = {
-    'BTC': 'bitcoin',
-    'ETH': 'ethereum',
-    'ADA': 'cardano',
-    'DOT': 'polkadot',
-    'SOL': 'solana',
+    "BTC": "bitcoin",
+    "ETH": "ethereum",
+    "ADA": "cardano",
+    "DOT": "polkadot",
+    "SOL": "solana",
 }
 
 
@@ -25,10 +26,7 @@ async def get_current_price(symbol: str) -> Optional[float]:
     coin_id = symbol_to_id(symbol)
     url = "https://api.coingecko.com/api/v3/simple/price"
     headers = {"x-cg-demo-api-key": settings.CRYPTO_API_KEY}
-    params = {
-        "ids": coin_id,
-        "vs_currencies": "usd"
-    }
+    params = {"ids": coin_id, "vs_currencies": "usd"}
 
     try:
         async with aiohttp.ClientSession() as session:

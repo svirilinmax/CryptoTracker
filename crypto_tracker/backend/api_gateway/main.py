@@ -1,15 +1,13 @@
 import sys
-import os
-
-sys.path.insert(0, '/app')
-
-
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 
-from backend.api_gateway.core.database import create_tables
 from backend.api_gateway.api.v1.routers import api_router
+from backend.api_gateway.core.database import create_tables
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+sys.path.insert(0, "/app")
+
 
 app = FastAPI(title="Crypto Tracker API")
 
@@ -33,12 +31,14 @@ async def startup_event():
     print("Таблицы базы данных созданы")
 
     for route in app.routes:
-        if hasattr(route, 'path'):
+        if hasattr(route, "path"):
             print(f"🔍 Route: {route.path}")
+
 
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.utcnow()}
+
 
 @app.get("/")
 async def root():

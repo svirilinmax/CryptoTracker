@@ -1,14 +1,12 @@
 import asyncio
 import sys
-import os
-
-sys.path.insert(0, '/app')
-
 from datetime import datetime
 
 from backend.api_gateway.core.database import get_async_session
 from backend.api_gateway.crud.asset import get_all_active_assets, update_asset_price
 from backend.api_gateway.services.price_service import get_current_price
+
+sys.path.insert(0, "/app")
 
 
 class PriceUpdateWorker:
@@ -35,7 +33,10 @@ class PriceUpdateWorker:
                     print(f"Failed to get price for {asset.symbol}")
                 await asyncio.sleep(0.1)
 
-            print(f"Successfully updated {updated_count}/{len(assets)} assets at {datetime.utcnow()}")
+            print(
+                f"Successfully updated {updated_count}/{len(assets)} assets "
+                f"at {datetime.utcnow()}"
+            )
             return updated_count
 
         except Exception as e:
@@ -63,7 +64,7 @@ class PriceUpdateWorker:
 async def main():
     print("Database tables created/verified")
 
-    worker = PriceUpdateWorker(interval=299)  # Обновление каждые 30 секунд
+    worker = PriceUpdateWorker(interval=299)
     await worker.run()
 
 

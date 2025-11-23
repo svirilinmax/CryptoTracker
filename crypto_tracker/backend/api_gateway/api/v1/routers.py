@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from .endpoints import auth, assets
+
+from .endpoints import assets, auth
 
 api_router = APIRouter()
 

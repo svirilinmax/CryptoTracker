@@ -1,19 +1,29 @@
+from backend.api_gateway.core.database import get_db
+from backend.api_gateway.core.security import (
+    get_current_user,
+    make_token,
+    verify_password,
+)
+from backend.api_gateway.crud.user import (
+    create_user,
+    get_user_by_email,
+    get_user_by_username,
+)
+from backend.api_gateway.models.database import User
+from backend.api_gateway.models.schemas import (
+    Token,
+    UserCreateRequest,
+    UserLoginRequest,
+    UserResponse,
+)
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from backend.api_gateway.core.database import get_db
-from backend.api_gateway.core.security import verify_password, make_token, get_current_user
-from backend.api_gateway.models.database import User
-from backend.api_gateway.models.schemas import UserResponse, UserCreateRequest, UserLoginRequest, Token
-from backend.api_gateway.crud.user import get_user_by_email, get_user_by_username, create_user
-
 
 router = APIRouter()
 
 
 @router.post("/register", response_model=UserResponse)
 async def register(user_data: UserCreateRequest, db: AsyncSession = Depends(get_db)):
-
     if await get_user_by_email(db, user_data.email):
         raise HTTPException(400, "Email already taken")
 
@@ -26,11 +36,11 @@ async def register(user_data: UserCreateRequest, db: AsyncSession = Depends(get_
         email=user.email,
         username=user.username,
         is_active=user.is_active,
-        created_at=user.created_at
+        created_at=user.created_at,
     )
 
 
-@router.post("/login", response_model= Token)
+@router.post("/login", response_model=Token)
 async def login(credentials: UserLoginRequest, db: AsyncSession = Depends(get_db)):
     user = await get_user_by_email(db, credentials.email)
 
@@ -45,10 +55,8 @@ async def login(credentials: UserLoginRequest, db: AsyncSession = Depends(get_db
 
     token = make_token(user.id, user.username)
 
-    return {
-        "access_token": token,
-        "token_type": "bearer"
-    }
+    return {"access_token": token, "token_type": "bearer"}
+
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
