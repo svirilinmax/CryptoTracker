@@ -39,7 +39,7 @@ class Asset(Base):
     )  # Название валюты (например: "bitcoin", "ethereum")
     min_price = Column(Float)  # Нижний порог цены для уведомления
     max_price = Column(Float)  # Верхний порог цены для уведомления
-    current_price = Column(Float, nullable=True)  # Текущая цена (обновляется воркером?)
+    current_price = Column(Float, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)  # Дата добавления актива
     is_active = Column(Boolean, default=True)  # Флаг активности отслеживания
 
