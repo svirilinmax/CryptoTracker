@@ -1,12 +1,25 @@
 import sys
 from datetime import datetime
 
+import sentry_sdk
 from backend.api_gateway.api.v1.routers import api_router
 from backend.api_gateway.core.database import create_tables
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 sys.path.insert(0, "/app")
+
+# Инициализация Sentry SDK ДО создания приложения FastAPI
+sentry_sdk.init(
+    dsn="https://1809f68dab6b0663dc34b2b35ba87b39@o4510421627502592."
+    "ingest.de.sentry.io/4510421631959120",
+    # Добавляем данные о пользователях (заголовки, IP и т.д.)
+    send_default_pii=True,
+    # Настройка сбора данных о производительности
+    traces_sample_rate=1.0,
+    # Включить профилирование (опционально)
+    profiles_sample_rate=1.0,
+)
 
 
 app = FastAPI(title="Crypto Tracker API")
@@ -44,3 +57,10 @@ async def health_check():
 async def root():
     """Главная страница — будем отдавать index.html??"""
     return {"message": "Crypto Tracker API работает!"}
+
+
+@app.get("/sentry-debug")
+async def trigger_error():
+    """Эндпоинт для тестирования Sentry - вызывает ошибку деления на ноль"""
+    division_by_zero = 1 / 0
+    return {"message": f"This should never be reached {division_by_zero}"}
