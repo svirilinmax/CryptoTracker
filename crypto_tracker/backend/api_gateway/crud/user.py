@@ -21,6 +21,9 @@ async def get_user_by_username(db: AsyncSession, username: str):
 
 
 async def create_user(db: AsyncSession, user_data: UserCreateRequest):
+    # TODO: Добавьте try/except IntegrityError для обработки дублирования email/username
+    # При повторной регистрации БД упадет с необработанной ошибкой
+    # См. REVIEW.md секция "Критические проблемы" пункт 4
     hashed_password = make_password_hash(user_data.password)
     db_user = User(
         email=user_data.email,
@@ -28,6 +31,6 @@ async def create_user(db: AsyncSession, user_data: UserCreateRequest):
         password_hash=hashed_password,
     )
     db.add(db_user)
-    await db.commit()
+    await db.commit()  # TODO: обернуть в try/except с rollback
     await db.refresh(db_user)
     return db_user

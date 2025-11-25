@@ -52,12 +52,15 @@ class UserResponse(BaseModel):
 
 
 # -------------Asset---------------
+# TODO: Добавьте валидацию полей с Field()
+# Нет проверок на пустые строки, отрицательные цены, min > max
+# См. REVIEW.md секция "Критические проблемы" пункт 3
 class AssetBase(BaseModel):
     """Базовая схема валюты"""
 
-    symbol: str
-    min_price: float
-    max_price: float
+    symbol: str  # TODO: Field(min_length=2, max_length=10, pattern="^[A-Z]+$")
+    min_price: float  # TODO: Field(gt=0)
+    max_price: float  # TODO: Field(gt=0) + validator для max_price > min_price
 
 
 class AssetCreateRequest(AssetBase):

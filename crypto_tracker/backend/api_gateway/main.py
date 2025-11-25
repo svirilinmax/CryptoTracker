@@ -9,7 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 sys.path.insert(0, "/app")
 
-# Инициализация Sentry SDK ДО создания приложения FastAPI
+# TODO: КРИТИЧНО! Переместите Sentry DSN в .env файл
+# Секретный ключ попадает в Git и может быть скомпрометирован
+# См. REVIEW.md секция "Критические проблемы" пункт 1
+# Решение: dsn=settings.SENTRY_DSN из config.py
 sentry_sdk.init(
     dsn="https://1809f68dab6b0663dc34b2b35ba87b39@o4510421627502592."
     "ingest.de.sentry.io/4510421631959120",
@@ -40,6 +43,10 @@ app.include_router(api_router, prefix="/api/v1")
 @app.on_event("startup")
 async def startup_event():
     """Асинхронное создание таблиц при старте"""
+    # TODO: КРИТИЧНО! Удалите create_tables() и используйте Alembic миграции
+    # При изменении моделей ТЕРЯЮТСЯ ВСЕ ДАННЫЕ пользователей!
+    # См. REVIEW.md секция "Критические проблемы" пункт 2
+    # Команды: alembic init alembic -> alembic revision --autogenerate -m "Init" -> alembic upgrade head
     await create_tables()
     print("Таблицы базы данных созданы")
 

@@ -28,9 +28,9 @@ class PriceUpdateWorker:
                 if current_price is not None:
                     await update_asset_price(db_session, asset.id, current_price)
                     updated_count += 1
-                    print(f"Updated {asset.symbol}: ${current_price}")
+                    print(f"Updated {asset.symbol}: ${current_price}")  # TODO: заменить на logger.info()
                 else:
-                    print(f"Failed to get price for {asset.symbol}")
+                    print(f"Failed to get price for {asset.symbol}")  # TODO: заменить на logger.warning()
                 await asyncio.sleep(0.1)
 
             print(
@@ -64,7 +64,9 @@ class PriceUpdateWorker:
 async def main():
     print("Database tables created/verified")
 
-    worker = PriceUpdateWorker(interval=299)
+    # TODO: Вынесите магические числа 299/59 в config.py как PRICE_UPDATE_INTERVAL
+    # См. REVIEW.md секция "Критические проблемы" пункт 6
+    worker = PriceUpdateWorker(interval=299)  # TODO: settings.PRICE_UPDATE_INTERVAL
     await worker.run()
 
 

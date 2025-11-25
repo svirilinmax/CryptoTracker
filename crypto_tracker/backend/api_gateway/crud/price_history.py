@@ -24,10 +24,13 @@ async def get_price_history_by_asset(
     """
     Получить историю цен для актива
     """
+    # TODO: Добавьте пагинацию (skip, limit) для больших объемов данных
+    # При миллионах записей запрос будет очень медленным
+    # См. REVIEW.md секция "Критические проблемы" пункт 7
     result = await db.execute(
         select(PriceHistory)
         .where(PriceHistory.asset_id == asset_id)
         .order_by(PriceHistory.recorded_at.desc())
-        .limit(limit)
+        .limit(limit)  # TODO: добавить .offset(skip), limit max 1000
     )
     return result.scalars().all()
