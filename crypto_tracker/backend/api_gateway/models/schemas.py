@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 # -------------Users---------------
@@ -9,7 +9,7 @@ class UserBase(BaseModel):
     """Базовая схема пользователя"""
 
     email: EmailStr
-    username: str
+    username: str = Field(..., min_length=3, max_length=50)
 
 
 class User(UserBase):
@@ -27,14 +27,14 @@ class User(UserBase):
 class UserCreateRequest(UserBase):
     """Схема для создания пользователя (регистрация)"""
 
-    password: str
+    password: str = Field(..., min_length=6)
 
 
 class UserLoginRequest(BaseModel):
     """Схема для входа в систему"""
 
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=1)
 
 
 class UserResponse(BaseModel):
@@ -52,15 +52,19 @@ class UserResponse(BaseModel):
 
 
 # -------------Asset---------------
-# TODO: Добавьте валидацию полей с Field()
-# Нет проверок на пустые строки, отрицательные цены, min > max
-# См. REVIEW.md секция "Критические проблемы" пункт 3
 class AssetBase(BaseModel):
     """Базовая схема валюты"""
 
-    symbol: str  # TODO: Field(min_length=2, max_length=10, pattern="^[A-Z]+$")
-    min_price: float  # TODO: Field(gt=0)
-    max_price: float  # TODO: Field(gt=0) + validator для max_price > min_price
+    symbol: str = Field(..., min_length=2, max_length=10, pattern="^[A-Z]+$")
+    min_price: float = Field(..., gt=0)
+    max_price: float = Field(..., gt=0)
+
+    @field_validator("max_price")
+    @classmethod
+    def validate_max_price(cls, v, values):
+        if "min_price" in values and v <= values["min_price"]:
+            raise ValueError("max_price должен быть больше min_price")
+        return v
 
 
 class AssetCreateRequest(AssetBase):
@@ -72,10 +76,19 @@ class AssetCreateRequest(AssetBase):
 class AssetUpdateRequest(BaseModel):
     """Схема для обновления валюты"""
 
-    symbol: Optional[str] = None
-    min_price: Optional[float] = None
-    max_price: Optional[float] = None
+    symbol: Optional[str] = Field(None, min_length=2, max_length=10, pattern="^[A-Z]+$")
+    min_price: Optional[float] = Field(None, gt=0)
+    max_price: Optional[float] = Field(None, gt=0)
     is_active: Optional[bool] = None
+
+    @field_validator("max_price")
+    @classmethod
+    def validate_max_price(cls, v, values):
+        if v is not None and "min_price" in values:
+            min_price = values.get("min_price")
+            if min_price is not None and v <= min_price:
+                raise ValueError("max_price должен быть больше min_price")
+        return v
 
 
 class AssetResponse(BaseModel):
@@ -98,13 +111,13 @@ class AssetResponse(BaseModel):
 class PriceHistoryBase(BaseModel):
     """Базовая схема истории цен"""
 
-    price: float
+    price: float = Field(..., gt=0)
 
 
 class PriceHistoryCreate(PriceHistoryBase):
     """Схема для создания записи истории цен"""
 
-    asset_id: int
+    asset_id: int = Field(..., gt=0)
 
 
 class PriceHistory(PriceHistoryBase):

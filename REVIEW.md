@@ -181,7 +181,7 @@ class AssetBase(BaseModel):
     symbol: str = Field(..., min_length=2, max_length=10, pattern="^[A-Z]+$")
     min_price: float = Field(..., gt=0, description="Должна быть > 0")
     max_price: float = Field(..., gt=0)
-    
+
     @field_validator('max_price')
     @classmethod
     def validate_max_price(cls, v, info):
@@ -220,7 +220,7 @@ async def create_user(db: AsyncSession, user_data: UserCreateRequest):
         username=user_data.username,
         password_hash=hashed_password,
     )
-    
+
     try:
         db.add(db_user)
         await db.commit()
@@ -280,7 +280,7 @@ await asyncio.sleep(59)
 class Settings(BaseSettings):
     PRICE_UPDATE_INTERVAL: int = 300  # 5 минут
     ERROR_RETRY_INTERVAL: int = 60
-    
+
 # В worker/main.py
 from backend.api_gateway.core.config import settings
 
@@ -304,14 +304,14 @@ async def get_price_history_by_asset(
 **Решение:**
 ```python
 async def get_price_history_by_asset(
-    db: AsyncSession, 
-    asset_id: int, 
+    db: AsyncSession,
+    asset_id: int,
     skip: int = 0,
     limit: int = 50  # меньше default
 ):
     if limit > 1000:  # защита от больших запросов
         limit = 1000
-        
+
     result = await db.execute(
         select(PriceHistory)
         .where(PriceHistory.asset_id == asset_id)
@@ -427,7 +427,7 @@ async def test_create_asset_unauthorized():
 # models/database.py
 class Alert(Base):
     __tablename__ = "alerts"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     asset_id = Column(Integer, ForeignKey("assets.id"))
@@ -436,7 +436,7 @@ class Alert(Base):
     price_at_alert = Column(Float)
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-    
+
     user = relationship("User")
     asset = relationship("Asset")
 ```
@@ -495,7 +495,7 @@ async def get_current_price(symbol: str, retry_count: int = 3) -> Optional[float
         except Exception as e:
             logger.error(f"Error fetching price for {symbol}: {e}", exc_info=True)
             return None
-    
+
     return None
 ```
 
@@ -525,7 +525,7 @@ async def get_current_price(symbol: str) -> Optional[float]:
     cached = await get_cached_price(symbol)
     if cached:
         return cached
-    
+
     # Если нет - запрашиваем API
     price = await fetch_price_from_api(symbol)
     if price:
@@ -585,9 +585,9 @@ async def lifespan(app: FastAPI):
     # Startup
     print("🚀 Starting up...")
     # await create_tables()  # Только для dev
-    
+
     yield
-    
+
     # Shutdown
     print("🛑 Shutting down...")
     await engine.dispose()
@@ -609,7 +609,7 @@ app = FastAPI(
 )
 
 # В эндпоинтах
-@router.post("/", response_model=AssetResponse, 
+@router.post("/", response_model=AssetResponse,
              summary="Создать новый актив",
              description="Добавляет криптовалюту для отслеживания с min/max ценами")
 async def create_new_asset(
@@ -645,11 +645,11 @@ async def add_process_time_header(request: Request, call_next):
     response = await call_next(request)
     process_time = time.time() - start_time
     response.headers["X-Process-Time"] = str(process_time)
-    
+
     # Логируем медленные запросы
     if process_time > 1.0:
         logger.warning(f"Slow request: {request.url.path} took {process_time:.2f}s")
-    
+
     return response
 ```
 

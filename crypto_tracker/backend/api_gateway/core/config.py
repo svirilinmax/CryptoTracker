@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings
+
+BACKEND_DIR = Path(__file__).parent.parent.parent
 
 
 class Settings(BaseSettings):
@@ -9,9 +13,14 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://redis:6379/0"
     JWT_SECRET: str
     SECRET_KEY: str
+    SENTRY_DSN: str
+
+    # Настройки для воркера
+    PRICE_UPDATE_INTERVAL: int = 300  # 5 минут по умолчанию
+    WORKER_ERROR_DELAY: int = 60  # 1 минута при ошибках
 
     class Config:
-        env_file = ".env"
+        env_file = BACKEND_DIR / ".env"
 
 
 settings = Settings()

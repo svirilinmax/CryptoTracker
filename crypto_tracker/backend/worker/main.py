@@ -1,12 +1,19 @@
 import asyncio
+import logging
 import sys
 from datetime import datetime
 
+from backend.api_gateway.core.config import settings
 from backend.api_gateway.core.database import get_async_session
 from backend.api_gateway.crud.asset import get_all_active_assets, update_asset_price
 from backend.api_gateway.services.price_service import get_current_price
 
 sys.path.insert(0, "/app")
+
+logger = logging.getLogger("price_worker")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 
 class PriceUpdateWorker:
@@ -28,19 +35,19 @@ class PriceUpdateWorker:
                 if current_price is not None:
                     await update_asset_price(db_session, asset.id, current_price)
                     updated_count += 1
-                    print(f"Updated {asset.symbol}: ${current_price}")  # TODO: заменить на logger.info()
+                    logger.info(f"Updated {asset.symbol}: ${current_price}")
                 else:
-                    print(f"Failed to get price for {asset.symbol}")  # TODO: заменить на logger.warning()
+                    logger.warning(f"Failed to get price for {asset.symbol}")
                 await asyncio.sleep(0.1)
 
-            print(
+            logger.info(
                 f"Successfully updated {updated_count}/{len(assets)} assets "
                 f"at {datetime.utcnow()}"
             )
             return updated_count
 
         except Exception as e:
-            print(f"Error updating prices: {e}")
+            logger.error(f"Error updating prices: {e}")
             return 0
         finally:
             await db_session.close()
@@ -48,25 +55,22 @@ class PriceUpdateWorker:
     async def run(self):
         """Основной цикл воркера"""
         self.is_running = True
-        print(f"Price update worker started. Interval: {self.interval} seconds")
+        logger.info(f"Price update worker started. Interval: {self.interval} seconds")
 
         while self.is_running:
             try:
                 await self.update_all_assets_prices()
-                print(f"Next update in {self.interval} seconds...")
+                logger.info(f"Next update in {self.interval} seconds...")
                 await asyncio.sleep(self.interval)
 
             except Exception as e:
-                print(f"Worker error: {e}")
-                await asyncio.sleep(59)
+                logger.error(f"Worker error: {e}")
+                await asyncio.sleep(settings.WORKER_ERROR_DELAY)
 
 
 async def main():
-    print("Database tables created/verified")
-
-    # TODO: Вынесите магические числа 299/59 в config.py как PRICE_UPDATE_INTERVAL
-    # См. REVIEW.md секция "Критические проблемы" пункт 6
-    worker = PriceUpdateWorker(interval=299)  # TODO: settings.PRICE_UPDATE_INTERVAL
+    logger.info("Database tables created/verified")
+    worker = PriceUpdateWorker(interval=settings.PRICE_UPDATE_INTERVAL)
     await worker.run()
 
 

@@ -10,19 +10,19 @@ async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False
 Base = declarative_base()
 
 
-# TODO: Добавьте commit/rollback для корректной работы транзакций
-# При ошибке изменения не откатываются и БД остается в inconsistent state
-# См. REVIEW.md секция "Критические проблемы" пункт 5
 async def get_db():
+    """
+    Получение сессии БД
+    """
     async with async_session() as session:
         try:
             yield session
-            await session.commit()  # TODO: добавить
+            await session.commit()
         except Exception:
-            await session.rollback()  # TODO: добавить
+            await session.rollback()
             raise
         finally:
-            await session.close()  # TODO: добавить
+            await session.close()
 
 
 async def create_tables():

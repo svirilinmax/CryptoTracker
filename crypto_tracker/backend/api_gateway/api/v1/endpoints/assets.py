@@ -19,7 +19,7 @@ from backend.api_gateway.models.schemas import (
     AssetUpdateRequest,
     PriceHistory,
 )
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
@@ -111,7 +111,8 @@ async def delete_existing_asset(
 @router.get("/{asset_id}/history", response_model=List[PriceHistory])
 async def get_asset_price_history(
     asset_id: int,
-    limit: int = 100,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=1000),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -122,7 +123,7 @@ async def get_asset_price_history(
     if not asset:
         raise HTTPException(404, "Asset not found")
 
-    history = await get_price_history_by_asset(db, asset_id, limit)
+    history = await get_price_history_by_asset(db, asset_id, skip, limit)
     return history
 
 

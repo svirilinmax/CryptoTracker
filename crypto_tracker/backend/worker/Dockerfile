@@ -15,4 +15,4 @@ COPY . .
 ENV PYTHONPATH=/app
 
 # Запускаем worker
-CMD ["python", "-m", "backend.worker.main"]
+CMD ["sh", "-c", "alembic upgrade head && python -m backend.worker.main"]
