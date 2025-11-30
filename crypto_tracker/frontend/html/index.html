@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CryptoTracker</title>
+</head>
+<body>
+    <div id="forguest">
+        <h1>Welcome to crypto tracker</h1>
+        <button onclick="Reg()">Register</button> <p>or</p> <button onclick="LogIn()">Login</button>
+    </div>
+
+    <div id="foruser">
+        <h1>Welcome back to crypto tracker</h1>
+        <button onclick="LogOut()">Log out</button>
+        <div>
+            <p>Blablablabla</p>
+        </div>
+    </div>
+
+    <script>
+        const APIurl = "http://localhost:8005";
+        const token = localStorage.getItem("access_token");
+
+        function Reg() {
+            window.location.href = "/register.html";
+        }
+        function LogIn() {
+            window.location.href = "/login.html";
+        }
+        function LogOut() {
+            localStorage.removeItem("access_token");
+            window.location.href = "/";
+        }
+
+        function UserPage() {
+            document.getElementById("forguest").style.display = "none";
+            document.getElementById("foruser").style.display = "block";
+        }
+
+        function GuestPage() {
+            document.getElementById("forguest").style.display = "block";
+            document.getElementById("foruser").style.display = "none";
+        }
+
+        async function checkAuth() {
+            const request = await fetch(`${APIurl}/api/v1/auth/me`, {
+            method: "GET",
+            credentials: "include",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+            },
+            });
+
+            if ((request.status == 200 && request.ok)) {
+                UserPage();
+            } else {
+                GuestPage();
+            }
+        }
+        checkAuth();
+        
+    </script>
+</body>
+</html>

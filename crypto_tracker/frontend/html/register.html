@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration</title>
+    <style>
+        #error{
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h2>Registration Panel</h2>
+    <label for="name">Name:</label><input type="text" name="name" id="name">
+    <label for="eMail">E-mail:</label><input type="email" name="eMail" id="eMail">
+    <label for="pw">Password:</label><input type="password" name="pw" id="pw">
+    <button onclick="reg()">register</button>
+    <p id="error"></p>
+    <script>
+        const APIurl = "http://localhost:8005";
+        const error_field = document.getElementById("error")
+        async function reg(){
+            const name = document.getElementById("name").value;
+            const email = document.getElementById("eMail").value;
+            const password = document.getElementById("pw").value;
+
+            const response = await fetch(`${APIurl}/api/v1/auth/register`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    "username":name,
+                    "email":email,
+                    "password":password}),
+            });
+            if(response.ok){
+                window.location.href = "/login.html";
+            }else{
+                error_field.innerText = "Something went wrong"
+            }
+        }
+    </script>
+</body>
+</html>
