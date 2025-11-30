@@ -1,7 +1,7 @@
 from typing import Optional
 
 import aiohttp
-from backend.api_gateway.core.config import settings
+from core.config import settings
 
 SYMBOL_MAP = {
     "BTC": "bitcoin",

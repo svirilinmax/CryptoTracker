@@ -61,8 +61,8 @@ class AssetBase(BaseModel):
 
     @field_validator("max_price")
     @classmethod
-    def validate_max_price(cls, v, values):
-        if "min_price" in values and v <= values["min_price"]:
+    def validate_max_price(cls, v, info):
+        if info.data and "min_price" in info.data and v <= info.data["min_price"]:
             raise ValueError("max_price должен быть больше min_price")
         return v
 
@@ -83,9 +83,9 @@ class AssetUpdateRequest(BaseModel):
 
     @field_validator("max_price")
     @classmethod
-    def validate_max_price(cls, v, values):
-        if v is not None and "min_price" in values:
-            min_price = values.get("min_price")
+    def validate_max_price(cls, v, info):
+        if v is not None and info.data and "min_price" in info.data:
+            min_price = info.data.get("min_price")
             if min_price is not None and v <= min_price:
                 raise ValueError("max_price должен быть больше min_price")
         return v

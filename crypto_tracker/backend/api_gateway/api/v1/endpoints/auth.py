@@ -1,22 +1,9 @@
-from backend.api_gateway.core.database import get_db
-from backend.api_gateway.core.security import (
-    get_current_user,
-    make_token,
-    verify_password,
-)
-from backend.api_gateway.crud.user import (
-    create_user,
-    get_user_by_email,
-    get_user_by_username,
-)
-from backend.api_gateway.models.database import User
-from backend.api_gateway.models.schemas import (
-    Token,
-    UserCreateRequest,
-    UserLoginRequest,
-    UserResponse,
-)
+from core.database import get_db
+from core.security import get_current_user, make_token, verify_password
 from fastapi import APIRouter, Depends, HTTPException
+from models.database import User
+from models.schemas import Token, UserCreateRequest, UserLoginRequest, UserResponse
+from repositories.user import create_user, get_user_by_email, get_user_by_username
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()

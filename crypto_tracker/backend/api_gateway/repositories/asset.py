@@ -1,7 +1,7 @@
 from typing import List, Optional
 
-from backend.api_gateway.models.database import Asset
-from backend.api_gateway.models.schemas import AssetCreateRequest, AssetUpdateRequest
+from models.database import Asset
+from models.schemas import AssetCreateRequest, AssetUpdateRequest
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -44,7 +44,7 @@ async def create_asset(
     """
     Создать новый актив
     """
-    from backend.api_gateway.services.price_service import get_current_price
+    from services.price_service import get_current_price
 
     current_price = await get_current_price(asset_data.symbol.upper())
 
@@ -60,7 +60,7 @@ async def create_asset(
     await db.commit()
     await db.refresh(db_asset)
     if current_price is not None:
-        from backend.api_gateway.crud.price_history import create_price_history
+        from repositories.price_history import create_price_history
 
         await create_price_history(db, db_asset.id, current_price)
     return db_asset
@@ -91,7 +91,7 @@ async def update_asset(
     """
     Обновить существующий актив
     """
-    from backend.api_gateway.services.price_service import get_current_price
+    from services.price_service import get_current_price
 
     asset = await get_asset_by_id(db, asset_id, user_id)
     if not asset:
@@ -122,34 +122,3 @@ async def delete_asset(db: AsyncSession, asset_id: int, user_id: int) -> bool:
     asset.is_active = False
     await db.commit()
     return True
-
-
-# _______________WORKER_____________________#
-async def get_all_active_assets(db: AsyncSession) -> List[Asset]:
-    """
-    Получить все активные валюты (для WORKER задачи)
-    """
-    result = await db.execute(select(Asset).where(Asset.is_active.is_(True)))
-    return result.scalars().all()
-
-
-async def update_asset_price(
-    db: AsyncSession, asset_id: int, current_price: float
-) -> Optional[Asset]:
-    """
-    Обновить текущую цену актива и записать в историю
-    """
-    from backend.api_gateway.crud.price_history import create_price_history
-
-    result = await db.execute(select(Asset).where(Asset.id == asset_id))
-    asset = result.scalar_one_or_none()
-
-    if asset:
-        asset.current_price = current_price
-
-        await create_price_history(db, asset_id, current_price)
-
-        await db.commit()
-        await db.refresh(asset)
-
-    return asset

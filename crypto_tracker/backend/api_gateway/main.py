@@ -1,13 +1,11 @@
-import sys
 from datetime import datetime
 
 import sentry_sdk
-from backend.api_gateway.api.v1.routers import api_router
-from backend.api_gateway.core.config import settings
+from api.v1.routers import api_router
+from core.config import settings
+from core.database import create_tables
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-sys.path.insert(0, "/app")
 
 sentry_sdk.init(
     dsn=settings.SENTRY_DSN,
@@ -44,6 +42,9 @@ app.include_router(api_router, prefix="/api/v1")
 @app.on_event("startup")
 async def startup_event():
     """Асинхронное создание таблиц при старте"""
+    await create_tables()
+    print("Таблицы базы данных созданы")
+
     for route in app.routes:
         if hasattr(route, "path"):
             print(f"🔍 Route: {route.path}")

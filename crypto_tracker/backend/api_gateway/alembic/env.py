@@ -6,8 +6,7 @@ from alembic import context
 from backend.api_gateway.core.database import Base
 from sqlalchemy import engine_from_config, pool
 
-# Добавляем корень проекта в Python path
-sys.path.append(os.getcwd())
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../.."))
 
 config = context.config
 
@@ -16,11 +15,6 @@ if config.config_file_name is not None:
 
 
 target_metadata = Base.metadata
-
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
 
 
 def run_migrations_offline() -> None:
