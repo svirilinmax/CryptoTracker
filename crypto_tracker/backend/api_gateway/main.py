@@ -6,6 +6,10 @@ from core.config import settings
 from core.database import create_tables
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+origins = [
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+]
 
 sentry_sdk.init(
     dsn=settings.SENTRY_DSN,
@@ -29,7 +33,7 @@ app = FastAPI(
 # Разрешаем фронту обращаться к API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # при необходимости ограничь домен
+    allow_origins=origins,  # при необходимости ограничь домен
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
