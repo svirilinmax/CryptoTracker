@@ -2,33 +2,27 @@ import os
 import sys
 from logging.config import fileConfig
 
-from alembic import context
-from backend.api_gateway.core.database import Base
-from sqlalchemy import engine_from_config, pool
+# Добавляем путь к проекту в PYTHONPATH ДО импортов
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "../../.."))
+from alembic import context  # noqa: E402
+
+# Теперь импорты из нашего проекта будут работать
+from core.config import settings  # noqa: E402
+from models.database import Base  # noqa: E402
+from sqlalchemy import engine_from_config, pool  # noqa: E402
 
 config = context.config
+
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-
 target_metadata = Base.metadata
 
 
-def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode.
-
-    This configures the context with just a URL
-    and not an Engine, though an Engine is acceptable
-    here as well.  By skipping the Engine creation
-    we don't even need a DBAPI to be available.
-
-    Calls to context.execute() here emit the given string to the
-    script output.
-
-    """
+def run_migrations_offline():
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
@@ -41,15 +35,9 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
-def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
-
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
+def run_migrations_online():
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
