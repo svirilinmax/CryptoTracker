@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>CryptoTracker</title>
+    <style>
+        p{
+            display: inline;
+        }
+    </style>
 </head>
 <body>
     <div id="forguest">
@@ -14,13 +19,28 @@
         <h1>Welcome back to crypto tracker</h1>
         <button onclick="LogOut()">Log out</button>
         <div>
-            <p>Blablablabla</p>
+            <ul id="my_assets"></ul>
         </div>
+        <div id="new_asset_form" style="display:none;">
+            <h2>Create New Asset</h2>
+            <label for="symbol">Symbol:</label><select name="symbol" id="symbol">
+                <option value="BTC">BTC (Bitcoin)</option>
+                <option value="ETH">ETH (Ethereum)</option>
+                <option value="ADA">ADA (Cardano)</option>
+                <option value="DOT">DOT (Polkadot)</option>
+                <option value="SOL">SOL (Solana)</option>
+            </select>
+            <label for="min">Minimal price ($):</label><input type="number" name="min" id="min">
+            <label for="max">Maximum price ($):</label><input type="number" name="max" id="max">
+            <button onclick="CreateAsset()">Create Asset</button>
+        </div>
+        <button onclick="CreateAssetMenu()" id="new_asset">Create new asset</button>
     </div>
 
     <script>
         const APIurl = "http://localhost:8005";
         const token = localStorage.getItem("access_token");
+        let shown = false;
 
         function Reg() {
             window.location.href = "/register.html";
@@ -33,14 +53,63 @@
             window.location.href = "/";
         }
 
-        function UserPage() {
+        async function UserPage() {
             document.getElementById("forguest").style.display = "none";
             document.getElementById("foruser").style.display = "block";
+            const request = await fetch(`${APIurl}/api/v1/assets`, {
+                method: "GET",
+                credentials: "include",
+                headers: {"Authorization": `Bearer ${token}`,},
+            });
+            const data = await request.json();
+            const assetsList = document.getElementById("my_assets");
+            for (const asset of data) {
+                const listItem = document.createElement("li");
+                listItem.textContent = `Asset: ${asset.symbol}, Current price: ${asset.current_price}`;
+                listItem.onclick = () => {
+                    // window.location.href = `${APIurl}/api/v1/assets/${asset.id}/history`;
+                    window.location.href = `/graph_of_asset.html?asset_id=${asset.id}`;
+                };
+                assetsList.appendChild(listItem);
+            }
         }
 
-        function GuestPage() {
+        function CreateAssetMenu() {
+            shown = !shown;
+            document.getElementById("new_asset_form").style.display = shown ? "block" : "none";
+            document.getElementById("new_asset").innerHTML = shown ? "Hide form" : "Create new asset";
+        }
+
+        async function GuestPage() {
             document.getElementById("forguest").style.display = "block";
             document.getElementById("foruser").style.display = "none";
+        }
+
+        async function CreateAsset() {
+            const symbol = document.getElementById("symbol").value;
+            const min = document.getElementById("min").value;
+            const max = document.getElementById("max").value;
+
+            const request = await fetch(`${APIurl}/api/v1/assets`, {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    symbol: symbol,
+                    min_price: parseFloat(min),
+                    max_price: parseFloat(max),
+                }),
+            });
+
+            if (request.status == 200) { //почемуто не 201 а 200
+                alert("Asset created successfully");
+                window.location.reload();
+            } else {
+                alert("Error creating asset");
+            }
         }
 
         async function checkAuth() {

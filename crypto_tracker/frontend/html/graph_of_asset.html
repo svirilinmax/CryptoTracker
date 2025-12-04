@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph</title>
+    <style>
+        #graph_container {
+            width: 800px;
+            height: 400px;
+            display: flex;
+            align-items: end;
+        }
+        .pillar {
+            width: 10px;
+            height: 100px;
+            background-color: blue;
+            display: inline-block;
+            margin-right: 2px;
+        }
+    </style>
+</head>
+<body>
+    <button onclick="ReturnToMain()">back</button>
+    <div>
+        <h1 id="h1">Asset Price History</h1>
+        <div id="graph_container">
+            
+        </div>
+    </div>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get("asset_id");
+
+        const APIurl = "http://localhost:8005";
+        const token = localStorage.getItem("access_token");
+
+        const pillars = [];
+        let min = 0;
+        let coe = 0;
+
+        async function get_asset_data() {
+            const asset = await fetch(`${APIurl}/api/v1/assets/${id}`, {
+                method: "GET",
+                credentials: "include",
+                headers: {"Authorization": `Bearer ${token}`,},
+            });
+            const assetData = await asset.json();   
+            return assetData;
+        }
+        
+        const assetData = get_asset_data().then(data => {
+            document.getElementById("h1").innerHTML = `Asset Price History for ${data.symbol}`;
+            min = data.min_price;
+            coe = 400 / (data.max_price - data.min_price);
+        });
+        // const min = assetData.min_price;
+        // document.getElementById("h1").innerHTML = `Asset Price History for ${data.symbol}`;
+        // const coe = 400 / (assetData.max_price - assetData.min_price);
+
+        const fetchAssetHistory = async (assetId) => {
+            const response = await fetch(`${APIurl}/api/v1/assets/${assetId}/history`, {
+                method: "GET",
+                credentials: "include",
+                headers: {"Authorization": `Bearer ${token}`,},
+            });
+            return await response.json();
+        };
+
+        function ReturnToMain() {
+            window.location.href = "index.html";
+        }
+
+        for(let i = 0; i < 50; i++) {
+            const pillar = document.createElement("div");
+            pillar.className = "pillar";
+            pillars.push(pillar);
+            document.getElementById("graph_container").appendChild(pillar);
+        }
+
+        async function renderGraph() {
+            const data = await fetchAssetHistory(id);
+            const container = document.getElementById("graph_container");
+            for(let i = 0; i < pillars.length; i++) {
+                const dataPoint = data[i];
+                if (dataPoint) {
+                    const height = Math.min((dataPoint.price - min) * coe, 400);
+                    pillars[pillars.length - i - 1].style.height = `${height}px`;
+                }
+            }
+        }
+        async function actualize_graph() {
+            await renderGraph();
+        }
+        actualize_graph();
+        var intervalID = window.setInterval(actualize_graph, 6000);
+    </script>
+</body>
+</html>
