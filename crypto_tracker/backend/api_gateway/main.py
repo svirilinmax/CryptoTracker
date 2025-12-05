@@ -6,6 +6,7 @@ from core.config import settings
 from core.database import create_tables
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 origins = [
     "http://localhost:8080",
     "http://127.0.0.1:8080",
