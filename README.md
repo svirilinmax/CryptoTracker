@@ -89,7 +89,6 @@ crypto_tracker/
 │   ├── test_api.py              # API тесты
 │   ├── database_models_test.py  # Тесты моделей данных
 │   └── __init__.py
-├── requirements.txt             # Основные зависимости
 ├── .env                         # Переменные окружения
 ├── .pre-commit-config.yaml     # Конфигурация pre-commit
 ├── Makefile                    # Утилиты для разработки
@@ -189,7 +188,6 @@ REDIS_URL=redis://redis:6379/0
 - `DELETE /api/v1/assets/{asset_id}` - Удалить актив (деактивировать)
 - `POST /api/v1/assets/{asset_id}/restore` - Восстановить актив
 - `GET /api/v1/assets/{asset_id}/history` - Получить историю цен с пагинацией
-- `POST /api/v1/assets/{asset_id}/refresh` - Принудительное обновление цены
 
 ### Системные
 - `GET /health` - Проверка здоровья приложения
