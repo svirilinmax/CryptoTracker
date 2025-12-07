@@ -22,13 +22,14 @@ def scrub_sensitive_data(event, hint):
     return event
 
 
-sentry_sdk.init(
-    dsn=settings.SENTRY_DSN,
-    send_default_pii=False,
-    traces_sample_rate=0.1,
-    profiles_sample_rate=0.1,
-    before_send=scrub_sensitive_data,
-)
+if settings.SENTRY_DSN != "":
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        send_default_pii=False,
+        traces_sample_rate=0.1,
+        profiles_sample_rate=0.1,
+        before_send=scrub_sensitive_data,
+    )
 
 
 app = FastAPI(
