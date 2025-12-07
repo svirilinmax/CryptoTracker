@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     JWT_SECRET: str
     SECRET_KEY: str
     SENTRY_DSN: str
+    DEBUG: bool = False
 
     class Config:
         env_file = BACKEND_DIR / ".env"

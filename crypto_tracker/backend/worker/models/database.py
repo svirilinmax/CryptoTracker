@@ -1,7 +1,16 @@
 from datetime import datetime
 
 from core.database import Base
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+)
 from sqlalchemy.orm import relationship
 
 
@@ -54,6 +63,9 @@ class PriceHistory(Base):
     """
 
     __tablename__ = "price_history"
+    __table_args__ = (
+        Index("ix_price_history_asset_recorded", "asset_id", "recorded_at"),
+    )
 
     # Поля для записи истории
     id = Column(

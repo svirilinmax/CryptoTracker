@@ -33,7 +33,9 @@ class Asset(Base):
     __tablename__ = "assets"
 
     id = Column(Integer, primary_key=True, index=True)  # Уникальный id
-    user_id = Column(Integer, ForeignKey("users.id"))  # Ссылка на владельца
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE")
+    )  # Ссылка на владельца
     symbol = Column(
         String, index=True
     )  # Название валюты (например: "bitcoin", "ethereum")
@@ -60,7 +62,7 @@ class PriceHistory(Base):
         Integer, primary_key=True, index=True
     )  # Уникальный идентификатор записи
     asset_id = Column(
-        Integer, ForeignKey("assets.id")
+        Integer, ForeignKey("assets.id", ondelete="CASCADE")
     )  # Ссылка на актив (внешний ключ)
     price = Column(Float)  # Цена актива в момент записи
     recorded_at = Column(DateTime, default=datetime.utcnow)  # Временная записи

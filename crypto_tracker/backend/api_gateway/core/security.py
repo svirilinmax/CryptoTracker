@@ -28,7 +28,7 @@ def verify_password(password: str, password_hash: str) -> bool:
 def make_token(user_id: int, username: str) -> str:
     now = int(time.time())
     payload = {
-        "sub": user_id,
+        "sub": str(user_id),
         "username": username,
         "iat": now,
         "exp": now + JWT_EXPIRE_SEC,
@@ -37,9 +37,10 @@ def make_token(user_id: int, username: str) -> str:
 
 
 def decode_token(token: str):
-    return jwt.decode(
-        token, JWT_SECRET, algorithms=[JWT_ALG], options={"verify_sub": False}
-    )
+    payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALG])
+    if not payload.get("sub"):
+        raise jwt.InvalidTokenError("Missing subject claim")
+    return payload
 
 
 # -------------User-------------------
@@ -48,7 +49,7 @@ async def get_current_user(
 ):
     try:
         payload = decode_token(token)
-        user_id = payload.get("sub")
+        user_id = int(payload.get("sub"))
         if user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"

@@ -4,8 +4,10 @@ from datetime import datetime
 
 from core.config import settings
 from core.database import get_async_session
+from httpx import HTTPError
 from repositories.asset_repo import get_all_active_assets, update_asset_price
 from services.price_service import get_current_price
+from sqlalchemy.exc import OperationalError
 
 logger = logging.getLogger("price_worker")
 logging.basicConfig(
@@ -42,9 +44,16 @@ class PriceUpdateWorker:
             )
             return updated_count
 
-        except Exception as e:
-            logger.error(f"Error updating prices: {e}")
+        except OperationalError as e:
+            logger.critical(f"Database connection error: {e}")
+            raise
+        except HTTPError as e:
+            logger.error(f"API error: {e}")
             return 0
+        except Exception as e:
+            logger.exception(f"Unexpected error: {e}")
+            raise
+
         finally:
             await db_session.close()
 

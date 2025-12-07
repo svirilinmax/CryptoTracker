@@ -4,7 +4,13 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 DATABASE_URL = settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
 
-engine = create_async_engine(DATABASE_URL, echo=True)
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=settings.DEBUG,
+    pool_pre_ping=True,
+    pool_size=20,
+    max_overflow=0,
+)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 Base = declarative_base()

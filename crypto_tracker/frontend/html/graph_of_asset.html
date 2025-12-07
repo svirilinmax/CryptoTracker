@@ -3,97 +3,665 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Graph</title>
+    <title>Crypto Chart - Professional Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     <style>
-        #graph_container {
-            width: 800px;
-            height: 400px;
-            display: flex;
-            align-items: end;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .pillar {
-            width: 10px;
-            height: 100px;
-            background-color: blue;
+
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .back-btn {
+            background: linear-gradient(45deg, #6a11cb, #2575fc);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .asset-info {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .asset-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00dbde, #fc00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .price-display {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+
+        .price-up {
+            color: #00ff88;
+        }
+
+        .price-down {
+            color: #ff4444;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+        }
+
+        .timeframe-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .timeframe-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .timeframe-btn.active {
+            background: linear-gradient(45deg, #6a11cb, #2575fc);
+            border-color: transparent;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 500px;
+            width: 100%;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #6a11cb;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert-thresholds {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border-left: 4px solid;
+        }
+
+        .alert-min {
+            border-left-color: #ff4444;
+        }
+
+        .alert-max {
+            border-left-color: #00ff88;
+        }
+
+        .alert-label {
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        .alert-value {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .price-change {
+            font-size: 16px;
+            padding: 4px 12px;
+            border-radius: 20px;
             display: inline-block;
-            margin-right: 2px;
+            margin-left: 10px;
+        }
+
+        .positive {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .negative {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+        }
+
+        @media (max-width: 768px) {
+            .chart-wrapper {
+                height: 400px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                justify-content: center;
+            }
         }
     </style>
 </head>
 <body>
-    <button onclick="ReturnToMain()">back</button>
-    <div>
-        <h1 id="h1">Asset Price History</h1>
-        <div id="graph_container">
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" onclick="ReturnToMain()">
+                ← Back to Dashboard
+            </button>
+            <div class="header-info">
+                <div id="currentPrice" class="price-display">Loading...</div>
+            </div>
+        </div>
 
+        <div class="asset-info">
+            <h1 id="assetTitle" class="asset-title">Loading Asset...</h1>
+            <div id="priceChange" class="price-change">-</div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">24h High</div>
+                <div id="dailyHigh" class="stat-value">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">24h Low</div>
+                <div id="dailyLow" class="stat-value">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Volume</div>
+                <div id="volume" class="stat-value">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Market Cap</div>
+                <div id="marketCap" class="stat-value">-</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="timeframe-btn active" data-timeframe="1h">1H</button>
+            <button class="timeframe-btn" data-timeframe="24h">24H</button>
+            <button class="timeframe-btn" data-timeframe="7d">7D</button>
+            <button class="timeframe-btn" data-timeframe="30d">30D</button>
+            <button class="timeframe-btn" data-timeframe="all">All</button>
+            <div style="margin-left: auto; display: flex; gap: 10px;">
+                <button class="timeframe-btn" id="toggleIndicators">Show SMA</button>
+                <button class="timeframe-btn" id="exportBtn">Export Data</button>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <div>Loading chart data...</div>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="priceChart"></canvas>
+            </div>
+        </div>
+
+        <div class="alert-thresholds alert-min">
+            <div>
+                <div class="alert-label">Min Price Alert</div>
+                <div id="minPriceAlert" class="alert-value">-</div>
+            </div>
+            <div>
+                <div class="alert-label">Max Price Alert</div>
+                <div id="maxPriceAlert" class="alert-value">-</div>
+            </div>
         </div>
     </div>
-    <script>
-        const params = new URLSearchParams(window.location.search);
-        const id = params.get("asset_id");
 
+    <script>
         const APIurl = "http://localhost:8005";
         const token = localStorage.getItem("access_token");
+        const params = new URLSearchParams(window.location.search);
+        const assetId = params.get("asset_id");
 
-        const pillars = [];
-        let min = 0;
-        let coe = 0;
+        let chart = null;
+        let assetData = null;
+        let priceHistory = [];
+        let currentTimeframe = 'all';
+        let showIndicators = false;
 
-        async function get_asset_data() {
-            const asset = await fetch(`${APIurl}/api/v1/assets/${id}`, {
-                method: "GET",
-                credentials: "include",
-                headers: {"Authorization": `Bearer ${token}`,},
-            });
-            const assetData = await asset.json();
-            return assetData;
-        }
-
-        const assetData = get_asset_data().then(data => {
-            document.getElementById("h1").innerHTML = `Asset Price History for ${data.symbol}`;
-            min = data.min_price;
-            coe = 400 / (data.max_price - data.min_price);
-        });
-        // const min = assetData.min_price;
-        // document.getElementById("h1").innerHTML = `Asset Price History for ${data.symbol}`;
-        // const coe = 400 / (assetData.max_price - assetData.min_price);
-
-        const fetchAssetHistory = async (assetId) => {
-            const response = await fetch(`${APIurl}/api/v1/assets/${assetId}/history`, {
-                method: "GET",
-                credentials: "include",
-                headers: {"Authorization": `Bearer ${token}`,},
-            });
-            return await response.json();
+        // DOM Elements
+        const elements = {
+            assetTitle: document.getElementById('assetTitle'),
+            currentPrice: document.getElementById('currentPrice'),
+            priceChange: document.getElementById('priceChange'),
+            dailyHigh: document.getElementById('dailyHigh'),
+            dailyLow: document.getElementById('dailyLow'),
+            volume: document.getElementById('volume'),
+            marketCap: document.getElementById('marketCap'),
+            minPriceAlert: document.getElementById('minPriceAlert'),
+            maxPriceAlert: document.getElementById('maxPriceAlert'),
+            loading: document.getElementById('loading')
         };
 
-        function ReturnToMain() {
-            window.location.href = "index.html";
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            if (!assetId) {
+                alert('No asset specified');
+                ReturnToMain();
+                return;
+            }
+
+            initializeChart();
+            loadAssetData();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Timeframe buttons
+            document.querySelectorAll('.timeframe-btn[data-timeframe]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.timeframe-btn[data-timeframe]').forEach(b =>
+                        b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentTimeframe = e.target.dataset.timeframe;
+                    filterAndUpdateChart();
+                });
+            });
+
+            // Indicators toggle
+            document.getElementById('toggleIndicators').addEventListener('click', () => {
+                showIndicators = !showIndicators;
+                document.getElementById('toggleIndicators').textContent =
+                    showIndicators ? 'Hide SMA' : 'Show SMA';
+                updateChart();
+            });
+
+            // Export button
+            document.getElementById('exportBtn').addEventListener('click', exportData);
         }
 
-        for(let i = 0; i < 50; i++) {
-            const pillar = document.createElement("div");
-            pillar.className = "pillar";
-            pillars.push(pillar);
-            document.getElementById("graph_container").appendChild(pillar);
-        }
+        async function loadAssetData() {
+            try {
+                // Load asset details
+                const assetResponse = await fetch(`${APIurl}/api/v1/assets/${assetId}`, {
+                    method: "GET",
+                    headers: {"Authorization": `Bearer ${token}`},
+                });
 
-        async function renderGraph() {
-            const data = await fetchAssetHistory(id);
-            const container = document.getElementById("graph_container");
-            for(let i = 0; i < pillars.length; i++) {
-                const dataPoint = data[i];
-                if (dataPoint) {
-                    const height = Math.min((dataPoint.price - min) * coe, 400);
-                    pillars[pillars.length - i - 1].style.height = `${height}px`;
-                }
+                if (!assetResponse.ok) throw new Error('Failed to load asset data');
+
+                assetData = await assetResponse.json();
+                updateAssetUI();
+
+                // Load price history
+                await loadPriceHistory();
+
+            } catch (error) {
+                console.error('Error loading asset data:', error);
+                alert('Failed to load asset data. Please try again.');
             }
         }
-        async function actualize_graph() {
-            await renderGraph();
+
+        async function loadPriceHistory() {
+            try {
+                const limit = currentTimeframe === 'all' ? 1000 :
+                             currentTimeframe === '30d' ? 720 :
+                             currentTimeframe === '7d' ? 168 :
+                             currentTimeframe === '24h' ? 24 : 6;
+
+                const response = await fetch(
+                    `${APIurl}/api/v1/assets/${assetId}/history?limit=${limit}`,
+                    {
+                        method: "GET",
+                        headers: {"Authorization": `Bearer ${token}`},
+                    }
+                );
+
+                if (!response.ok) throw new Error('Failed to load price history');
+
+                priceHistory = await response.json();
+                priceHistory.reverse(); // Oldest to newest for chart
+
+                updateChart();
+                elements.loading.style.display = 'none';
+
+            } catch (error) {
+                console.error('Error loading price history:', error);
+                elements.loading.innerHTML = '<div style="color: #ff4444;">Failed to load chart data</div>';
+            }
         }
-        actualize_graph();
-        var intervalID = window.setInterval(actualize_graph, 6000);
+
+        function updateAssetUI() {
+            if (!assetData) return;
+
+            elements.assetTitle.textContent = `${assetData.symbol} Price Chart`;
+            elements.currentPrice.textContent = `$${assetData.current_price?.toFixed(2) || '0.00'}`;
+            elements.currentPrice.className = `price-display ${getPriceChangeClass()}`;
+
+            elements.minPriceAlert.textContent = `$${assetData.min_price.toFixed(2)}`;
+            elements.maxPriceAlert.textContent = `$${assetData.max_price.toFixed(2)}`;
+
+            // Calculate price change if we have history
+            if (priceHistory.length >= 2) {
+                const firstPrice = priceHistory[0].price;
+                const lastPrice = priceHistory[priceHistory.length - 1].price;
+                const change = ((lastPrice - firstPrice) / firstPrice) * 100;
+
+                elements.priceChange.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+                elements.priceChange.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
+            }
+
+            // Calculate 24h high/low (simplified - from available data)
+            if (priceHistory.length > 0) {
+                const prices = priceHistory.map(p => p.price);
+                elements.dailyHigh.textContent = `$${Math.max(...prices).toFixed(2)}`;
+                elements.dailyLow.textContent = `$${Math.min(...prices).toFixed(2)}`;
+            }
+
+            // Mock volume and market cap (in real app, get from API)
+            elements.volume.textContent = `$${(Math.random() * 1000000000).toLocaleString()}`;
+            elements.marketCap.textContent = `$${(Math.random() * 50000000000).toLocaleString()}`;
+        }
+
+        function getPriceChangeClass() {
+            if (!priceHistory.length) return '';
+            const firstPrice = priceHistory[0].price;
+            const lastPrice = priceHistory[priceHistory.length - 1].price;
+            return lastPrice >= firstPrice ? 'price-up' : 'price-down';
+        }
+
+        function initializeChart() {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Price',
+                        data: [],
+                        borderColor: '#6a11cb',
+                        backgroundColor: 'rgba(106, 17, 203, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#6a11cb',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    return `Price: $${context.parsed.y.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'hour',
+                                displayFormats: {
+                                    hour: 'MMM d, HH:mm'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#aaa'
+                            }
+                        },
+                        y: {
+                            position: 'right',
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#aaa',
+                                callback: function(value) {
+                                    return '$' + value.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function filterAndUpdateChart() {
+            let filteredData = [...priceHistory];
+
+            const now = new Date();
+            switch(currentTimeframe) {
+                case '1h':
+                    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+                    filteredData = priceHistory.filter(p => new Date(p.recorded_at) > oneHourAgo);
+                    break;
+                case '24h':
+                    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                    filteredData = priceHistory.filter(p => new Date(p.recorded_at) > oneDayAgo);
+                    break;
+                case '7d':
+                    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    filteredData = priceHistory.filter(p => new Date(p.recorded_at) > sevenDaysAgo);
+                    break;
+                case '30d':
+                    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                    filteredData = priceHistory.filter(p => new Date(p.recorded_at) > thirtyDaysAgo);
+                    break;
+                // 'all' uses all data
+            }
+
+            updateChart(filteredData);
+        }
+
+        function updateChart(data = priceHistory) {
+            if (!chart || !data.length) return;
+
+            const chartData = data.map(point => ({
+                x: new Date(point.recorded_at),
+                y: point.price
+            }));
+
+            chart.data.datasets[0].data = chartData;
+
+            // Add SMA indicator if enabled
+            if (showIndicators) {
+                const smaData = calculateSMA(data, 20);
+                if (!chart.data.datasets[1]) {
+                    chart.data.datasets.push({
+                        label: 'SMA (20)',
+                        data: smaData,
+                        borderColor: '#00ff88',
+                        backgroundColor: 'transparent',
+                        borderWidth: 1.5,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        tension: 0.1
+                    });
+                } else {
+                    chart.data.datasets[1].data = smaData;
+                }
+            } else if (chart.data.datasets[1]) {
+                chart.data.datasets.splice(1, 1);
+            }
+
+            // Update Y-axis scale based on data
+            const prices = data.map(p => p.price);
+            const minPrice = Math.min(...prices) * 0.995;
+            const maxPrice = Math.max(...prices) * 1.005;
+
+            chart.options.scales.y.min = minPrice;
+            chart.options.scales.y.max = maxPrice;
+
+            chart.update();
+            updateAssetUI();
+        }
+
+        function calculateSMA(data, period) {
+            const result = [];
+            for (let i = period - 1; i < data.length; i++) {
+                let sum = 0;
+                for (let j = 0; j < period; j++) {
+                    sum += data[i - j].price;
+                }
+                result.push({
+                    x: new Date(data[i].recorded_at),
+                    y: sum / period
+                });
+            }
+            return result;
+        }
+
+        function exportData() {
+            if (!priceHistory.length) {
+                alert('No data to export');
+                return;
+            }
+
+            const csvContent = [
+                ['Timestamp', 'Price'].join(','),
+                ...priceHistory.map(p => [
+                    new Date(p.recorded_at).toISOString(),
+                    p.price
+                ].join(','))
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${assetData?.symbol || 'crypto'}_price_history.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        function ReturnToMain() {
+            window.location.href = "/index.html";
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                loadPriceHistory();
+            }
+        }, 30000);
     </script>
 </body>
 </html>

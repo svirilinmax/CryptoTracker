@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
@@ -27,7 +28,17 @@ class User(UserBase):
 class UserCreateRequest(UserBase):
     """Схема для создания пользователя (регистрация)"""
 
-    password: str = Field(..., min_length=6)
+    password: str = Field(..., min_length=12, max_length=128)
+
+    @field_validator("password")
+    def validate_password_strength(cls, v):
+        if not any(c.isupper() for c in v):
+            raise ValueError("Password must contain uppercase letter")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Password must contain digit")
+        if not any(c in "!@#$%^&*" for c in v):
+            raise ValueError("Password must contain special character")
+        return v
 
 
 class UserLoginRequest(BaseModel):
@@ -52,10 +63,18 @@ class UserResponse(BaseModel):
 
 
 # -------------Asset---------------
+class CryptoSymbol(str, Enum):
+    BTC = "BTC"
+    ETH = "ETH"
+    ADA = "ADA"
+    DOT = "DOT"
+    SOL = "SOL"
+
+
 class AssetBase(BaseModel):
     """Базовая схема валюты"""
 
-    symbol: str = Field(..., min_length=2, max_length=10, pattern="^[A-Z]+$")
+    symbol: CryptoSymbol
     min_price: float = Field(..., gt=0)
     max_price: float = Field(..., gt=0)
 

@@ -1,9 +1,16 @@
+import logging
 from typing import List, Optional
 
+from fastapi import HTTPException
 from models.database import Asset
 from models.schemas import AssetCreateRequest, AssetUpdateRequest
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+
+logger = logging.getLogger("price_delete_asset")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 
 async def get_assets_by_user(db: AsyncSession, user_id: int) -> List[Asset]:
@@ -114,11 +121,22 @@ async def delete_asset(db: AsyncSession, asset_id: int, user_id: int) -> bool:
     """
     Удалить актив из отслеживаемых
     """
-
     asset = await get_asset_by_id(db, asset_id, user_id)
     if not asset:
+        logger.warning(
+            f"Delete attempt for non-existent or "
+            f"unauthorized asset_id={asset_id} by user_id={user_id}"
+        )
         return False
+
+    if asset.user_id != user_id:
+        logger.error(
+            f"SECURITY: User {user_id} attempted "
+            f"to delete asset {asset_id} owned by {asset.user_id}"
+        )
+        raise HTTPException(403, "Forbidden")
 
     asset.is_active = False
     await db.commit()
+    logger.info(f"Asset {asset_id} deleted by user {user_id}")
     return True
