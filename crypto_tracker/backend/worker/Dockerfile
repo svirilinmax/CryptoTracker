@@ -1,18 +1,12 @@
-# backend/worker/Dockerfile
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Копируем зависимости из текущей директории (backend/)
-COPY ../../requirements.txt .
+COPY backend/worker/requirements_worker.txt .
 
-# Устанавливаем зависимости
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements_worker.txt
 
-# Копируем весь проект
-COPY . .
 
-ENV PYTHONPATH=/app
+COPY backend/worker/ .
 
-# Запускаем worker
-CMD ["sh", "-c", "alembic upgrade head && python -m backend.worker.main"]
+CMD ["python", "main.py"]

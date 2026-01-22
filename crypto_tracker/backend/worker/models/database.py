@@ -1,7 +1,16 @@
 from datetime import datetime
 
 from core.database import Base
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+)
 from sqlalchemy.orm import relationship
 
 
@@ -33,9 +42,7 @@ class Asset(Base):
     __tablename__ = "assets"
 
     id = Column(Integer, primary_key=True, index=True)  # Уникальный id
-    user_id = Column(
-        Integer, ForeignKey("users.id", ondelete="CASCADE")
-    )  # Ссылка на владельца
+    user_id = Column(Integer, ForeignKey("users.id"))  # Ссылка на владельца
     symbol = Column(
         String, index=True
     )  # Название валюты (например: "bitcoin", "ethereum")
@@ -56,13 +63,16 @@ class PriceHistory(Base):
     """
 
     __tablename__ = "price_history"
+    __table_args__ = (
+        Index("ix_price_history_asset_recorded", "asset_id", "recorded_at"),
+    )
 
     # Поля для записи истории
     id = Column(
         Integer, primary_key=True, index=True
     )  # Уникальный идентификатор записи
     asset_id = Column(
-        Integer, ForeignKey("assets.id", ondelete="CASCADE")
+        Integer, ForeignKey("assets.id")
     )  # Ссылка на актив (внешний ключ)
     price = Column(Float)  # Цена актива в момент записи
     recorded_at = Column(DateTime, default=datetime.utcnow)  # Временная записи

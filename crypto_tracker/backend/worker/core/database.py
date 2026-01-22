@@ -4,13 +4,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 DATABASE_URL = settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
 
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=settings.DEBUG,
-    pool_pre_ping=True,
-    pool_size=20,
-    max_overflow=0,
-)
+engine = create_async_engine(DATABASE_URL, echo=True)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 Base = declarative_base()
@@ -29,14 +23,6 @@ async def get_db():
             raise
         finally:
             await session.close()
-
-
-async def create_tables():
-    """
-    Создает все таблицы в базе данных
-    """
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
 
 def get_async_session():

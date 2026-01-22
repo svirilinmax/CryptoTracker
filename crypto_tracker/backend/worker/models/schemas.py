@@ -1,5 +1,4 @@
 from datetime import datetime
-from enum import Enum
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
@@ -28,17 +27,7 @@ class User(UserBase):
 class UserCreateRequest(UserBase):
     """Схема для создания пользователя (регистрация)"""
 
-    password: str = Field(..., min_length=12, max_length=128)
-
-    @field_validator("password")
-    def validate_password_strength(cls, v):
-        if not any(c.isupper() for c in v):
-            raise ValueError("Password must contain uppercase letter")
-        if not any(c.isdigit() for c in v):
-            raise ValueError("Password must contain digit")
-        if not any(c in "!@#$%^&*" for c in v):
-            raise ValueError("Password must contain special character")
-        return v
+    password: str = Field(..., min_length=6)
 
 
 class UserLoginRequest(BaseModel):
@@ -63,25 +52,17 @@ class UserResponse(BaseModel):
 
 
 # -------------Asset---------------
-class CryptoSymbol(str, Enum):
-    BTC = "BTC"
-    ETH = "ETH"
-    ADA = "ADA"
-    DOT = "DOT"
-    SOL = "SOL"
-
-
 class AssetBase(BaseModel):
     """Базовая схема валюты"""
 
-    symbol: CryptoSymbol
+    symbol: str = Field(..., min_length=2, max_length=10, pattern="^[A-Z]+$")
     min_price: float = Field(..., gt=0)
     max_price: float = Field(..., gt=0)
 
     @field_validator("max_price")
     @classmethod
-    def validate_max_price(cls, v, info):
-        if info.data and "min_price" in info.data and v <= info.data["min_price"]:
+    def validate_max_price(cls, v, values):
+        if "min_price" in values and v <= values["min_price"]:
             raise ValueError("max_price должен быть больше min_price")
         return v
 
@@ -102,9 +83,9 @@ class AssetUpdateRequest(BaseModel):
 
     @field_validator("max_price")
     @classmethod
-    def validate_max_price(cls, v, info):
-        if v is not None and info.data and "min_price" in info.data:
-            min_price = info.data.get("min_price")
+    def validate_max_price(cls, v, values):
+        if v is not None and "min_price" in values:
+            min_price = values.get("min_price")
             if min_price is not None and v <= min_price:
                 raise ValueError("max_price должен быть больше min_price")
         return v

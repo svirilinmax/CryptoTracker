@@ -1,14 +1,13 @@
 import asyncio
 import logging
-import sys
 from datetime import datetime
 
-from backend.api_gateway.core.config import settings
-from backend.api_gateway.core.database import get_async_session
-from backend.api_gateway.crud.asset import get_all_active_assets, update_asset_price
-from backend.api_gateway.services.price_service import get_current_price
-
-sys.path.insert(0, "/app")
+from core.config import settings
+from core.database import get_async_session
+from httpx import HTTPError
+from repositories.asset_repo import get_all_active_assets, update_asset_price
+from services.price_service import get_current_price
+from sqlalchemy.exc import OperationalError
 
 logger = logging.getLogger("price_worker")
 logging.basicConfig(
@@ -19,7 +18,6 @@ logging.basicConfig(
 class PriceUpdateWorker:
     def __init__(self, interval: int = 300):
         self.interval = interval
-        self.is_running = False
 
     async def update_all_assets_prices(self):
         """
@@ -46,18 +44,24 @@ class PriceUpdateWorker:
             )
             return updated_count
 
-        except Exception as e:
-            logger.error(f"Error updating prices: {e}")
+        except OperationalError as e:
+            logger.critical(f"Database connection error: {e}")
+            raise
+        except HTTPError as e:
+            logger.error(f"API error: {e}")
             return 0
+        except Exception as e:
+            logger.exception(f"Unexpected error: {e}")
+            raise
+
         finally:
             await db_session.close()
 
     async def run(self):
         """Основной цикл воркера"""
-        self.is_running = True
         logger.info(f"Price update worker started. Interval: {self.interval} seconds")
 
-        while self.is_running:
+        while True:
             try:
                 await self.update_all_assets_prices()
                 logger.info(f"Next update in {self.interval} seconds...")

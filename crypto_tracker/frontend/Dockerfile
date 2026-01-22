@@ -17,7 +17,9 @@
 FROM nginx:alpine
 
   # Копируем все файлы фронтенда в nginx
-COPY frontend/ /usr/share/nginx/html/
+# COPY frontend/ /usr/share/nginx/html/
+COPY ./html /usr/share/nginx/html
+COPY ./nginx.conf /etc/nginx/conf.d/default.conf
 
   # Убеждаемся, что index.html является файлом по умолчанию
 RUN echo "server { listen 80; root /usr/share/nginx/html; index index.html; location /{ try_files \$uri \$uri/ /index.html; }}" > /etc/nginx/conf.d/default.conf
